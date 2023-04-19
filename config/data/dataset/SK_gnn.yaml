@@ -1,0 +1,3 @@
+_target_: watchmal.dataset.gnn.gnn_dataset.GnnDataset
+geometry_file: /home/ayankelevich/SK_geo.npz
+k_neighbors: 10

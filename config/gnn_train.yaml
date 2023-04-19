@@ -1,12 +1,13 @@
 gpu_list:
-    - 5
+  #  - 0
+   - 1
 seed: null
 data:
     is_graph: True
 dump_path: './outputs/'
 defaults:
-    - data: iwcd_short
-    - data/dataset: iwcd_gnn
+    - data: SK_B8_redwit_4MeV_dummy
+    - data/dataset: SK_gnn
     - model: gnn
     - engine: classifier
     - tasks/train: train_gnn
