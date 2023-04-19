@@ -371,8 +371,11 @@ class ClassifierEngine:
                 self.data = eval_data['data']
                 self.labels = eval_data['labels']
 
-                eval_indices = eval_data['indices']
-                
+                if 'indices' in eval_data:
+                    eval_indices = eval_data['indices']
+                else:
+                    eval_indices = torch.tensor([])
+
                 # Run the forward procedure and output the result
                 result = self.forward(train=False)
 
