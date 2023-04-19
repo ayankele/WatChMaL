@@ -37,12 +37,14 @@ class H5CommonDataset(Dataset, ABC):
     hit_time          (n_hits,)       float32    Time of the hit
     ====================================================================================================================
     """
-    def __init__(self, h5_path):
+    def __init__(self, h5_path, variables):
         self.h5_path = h5_path
         with h5py.File(self.h5_path, 'r') as h5_file:
             self.dataset_length = h5_file["labels"].shape[0]
 
         self.label_set = None
+        
+        self.variables = variables
 
         self.initialized = False
 
@@ -76,6 +78,10 @@ class H5CommonDataset(Dataset, ABC):
         self.time = np.memmap(self.h5_path, mode="r", shape=self.hdf5_hit_time.shape,
                               offset=self.hdf5_hit_time.id.get_offset(),
                               dtype=self.hdf5_hit_time.dtype)
+
+        if self.variables is not None:
+            self.variable_data = np.column_stack((np.array(self.h5_file[var]) for var in self.variables)).astype(np.float32)
+
         self.load_hits()
 
         # Set attribute so that method won't be invoked again
@@ -140,8 +146,8 @@ class H5Dataset(H5CommonDataset, ABC):
     hit_charge  (n_hits,)  float32    Charge of the digitized hit
     =============================================================
     """
-    def __init__(self, h5_path):
-        H5CommonDataset.__init__(self, h5_path)
+    def __init__(self, h5_path, variables):
+        H5CommonDataset.__init__(self, h5_path, variables)
         
     def load_hits(self):
         """Creates a memmap for the digitized hit charge data."""

@@ -1,0 +1,21 @@
+gpu_list:
+  #  - 0
+   - 1
+seed: null
+data:
+    is_graph: True
+dump_path: './outputs/'
+defaults:
+    - data: SK_B8_redwit_4MeV_dummy
+    - data/dataset: SK_hybrid
+    - model: hybrid_resgcn_linear
+    - engine: classifier
+    - tasks/restore_state: restore_state
+    - tasks/train: train_gnn
+    - optimizers@tasks.train.optimizers: adam
+    - sampler@tasks.train.data_loaders.train.sampler: subset_random
+    - sampler@tasks.train.data_loaders.validation.sampler: subset_random
+    - tasks/restore_best_state: restore_best_state
+    - tasks/evaluate: test
+    - sampler@tasks.evaluate.data_loaders.test.sampler: subset_sequential
+    - _self_

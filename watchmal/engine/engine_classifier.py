@@ -151,11 +151,20 @@ class ClassifierEngine:
         """
         with torch.set_grad_enabled(train):
             # Move the data and the labels to the GPU (if using CPU this has no effect)
-            data = self.data.to(self.device)
             labels = self.labels.to(self.device)
 
-            model_out = self.model(data)
-            
+            if type(self.data) is list:
+                data=self.data
+                for data_input in data:
+                    data_input.to(self.device)
+
+                model_out = self.model(data[0].to(self.device),data[1].to(self.device))
+
+            else:
+                data = self.data.to(self.device)
+
+                model_out = self.model(data)
+
             softmax = self.softmax(model_out)
             predicted_labels = torch.argmax(model_out, dim=-1)
 

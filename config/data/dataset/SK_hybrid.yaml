@@ -1,0 +1,21 @@
+_target_: watchmal.dataset.hybrid.gnn_vars_dataset.GnnHybridDataset
+geometry_file: /home/ayankelevich/SK_geo.npz
+k_neighbors: 10
+variables:
+  - MSG
+  - angles
+  - bsdirks
+  - directions
+  - bswall
+  - bseffwall
+  - energies
+  - goodness
+  - nhit
+  - bsovaq
+  - bsclik
+  - poswalx
+  - poswaly
+  - poswalz
+  - positions_offline
+  - positions
+
