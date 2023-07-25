@@ -1,0 +1,7 @@
+#_target_: watchmal.model.gnn.GCN
+_target_: watchmal.model.hybrid.HybridLinearDyEdCNN
+hit_in_feat: 5
+var_in_feat: 23
+hit_embed_dim: 512
+var_embed_dim: 512
+num_classes: 2

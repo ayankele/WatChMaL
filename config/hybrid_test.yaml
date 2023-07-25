@@ -8,7 +8,7 @@ dump_path: './outputs/'
 defaults:
     - data: SK_B8_redwit_4MeV_bsvertex_eval
     - data/dataset: SK_hybrid
-    - model: hybrid_resgcn_linear  
+    - model: hybrid_dyedgecnn_linear
     - engine: classifier
     - tasks/restore_state: restore_state
     - tasks/evaluate: test

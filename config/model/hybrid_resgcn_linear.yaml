@@ -1,5 +1,5 @@
 #_target_: watchmal.model.gnn.GCN
-_target_: watchmal.model.hybrid.HybridLinearNetwork
+_target_: watchmal.model.hybrid.HybridLinearResGCN
 hit_in_feat: 5
 var_in_feat: 23
 hit_embed_dim: 256

@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch_geometric
 
 class ResGCNEmbed(nn.Module):
-    def __init__(self,  in_feat=8, h_feat=128, num_classes=4, num_layers=6, dropout=0.1):
+    def __init__(self,  in_feat=8, h_feat=128, num_layers=6, dropout=0.1):
         '''
         Residual Graph Convolutional Network (ResGCN)
         The skip connection operations from the 
@@ -35,9 +35,32 @@ class ResGCNEmbed(nn.Module):
         x = self.node_encoder(x)
         for layer in self.layers:
             x = layer(x, edge_index)
-        #return x
         x = torch_geometric.nn.global_add_pool(x, batch)
         return x
+
+class DyEdCNNEmbed(nn.Module):
+    def __init__(self, in_feat=8, k=10, h_feat=64, dropout_rate=0.1, aggr='max'):
+        '''
+        Dynamic Edge Convolutional Neural Network (DyEdCNN)
+        The Graph Neural Network from the 
+        “Dynamic Graph CNN for Learning on Point Clouds” paper,
+        using the EdgeConv operator for message passing.
+        '''
+        super().__init__()
+
+        self.conv1 = torch_geometric.nn.DynamicEdgeConv(
+            torch_geometric.nn.MLP([2 * in_feat, h_feat, h_feat, h_feat]), k, aggr)
+        self.conv2 = torch_geometric.nn.DynamicEdgeConv(
+            torch_geometric.nn.MLP([2 * h_feat, 2 * h_feat]), k, aggr)
+        self.lin1 = torch.nn.Linear(3 * h_feat, 4 * h_feat)
+
+    def forward(self, graph):
+        x, edge_index, batch = graph.x, graph.edge_index, graph.batch
+        x1 = self.conv1(x, batch)
+        x2 = self.conv2(x1, batch)
+        out = self.lin1(torch.cat([x1, x2], dim=1))
+        out = torch_geometric.nn.global_max_pool(out, batch)
+        return out
 
 class VariableEmbed(nn.Module):
     def __init__(self, num_var=19, embed_dim=64):
@@ -108,11 +131,30 @@ class CentralLinear(nn.Module):
         return x
 
 
-class HybridLinearNetwork(nn.Module):
+class HybridLinearResGCN(nn.Module):
     def __init__(self, hit_in_feat=5, var_in_feat=19, num_classes=2, hit_embed_dim=64, var_embed_dim=64, num_heads=8, num_encoder_layers=6):
         super().__init__()
 
         self.hit_embed=ResGCNEmbed(in_feat=hit_in_feat, h_feat=hit_embed_dim)
+        self.var_embed=VariableEmbed(num_var=var_in_feat, embed_dim=var_embed_dim)
+        self.embed_dim = hit_embed_dim + var_embed_dim
+
+        self.linearnetwork=CentralLinear(num_classes=num_classes, hidden_dim=self.embed_dim)
+
+    def forward(self, graph, var_data):
+        hit_embed=self.hit_embed(graph)
+        var_embed=self.var_embed(var_data)
+
+        x=self.linearnetwork(torch.cat((hit_embed,var_embed),-1).reshape(-1,1,self.embed_dim))
+        x=x.flatten(start_dim=1,end_dim=2)
+
+        return x
+
+class HybridLinearDyEdCNN(nn.Module):
+    def __init__(self, hit_in_feat=5, var_in_feat=19, num_classes=2, hit_embed_dim=64, var_embed_dim=64):
+        super().__init__()
+
+        self.hit_embed=DyEdCNNEmbed(in_feat=hit_in_feat, h_feat=int(hit_embed_dim/4))
         self.var_embed=VariableEmbed(num_var=var_in_feat, embed_dim=var_embed_dim)
         self.embed_dim = hit_embed_dim + var_embed_dim
 
