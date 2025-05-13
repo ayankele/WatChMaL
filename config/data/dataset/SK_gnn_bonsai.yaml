@@ -1,0 +1,2 @@
+_target_: watchmal.dataset.gnn.gnn_dataset.GnnDataset_bonsai
+geometry_file: /home/uci/WatChMaL-GNN/SK_geo_orientations.npz

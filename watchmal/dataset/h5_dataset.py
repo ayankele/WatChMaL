@@ -62,16 +62,16 @@ class H5CommonDataset(Dataset, ABC):
         # self.event_ids  = np.array(self.h5_file["event_ids"])
         # self.root_files = np.array(self.h5_file["root_files"])
         self.labels = np.array(self.h5_file["labels"])
-        self.positions  = np.array(self.h5_file["positions"])
-        self.angles     = np.array(self.h5_file["angles"])
-        self.energies   = np.array(self.h5_file["energies"])
+        #self.positions  = np.array(self.h5_file["positions"])
+        #self.angles     = np.array(self.h5_file["angles"])
+        #self.energies   = np.array(self.h5_file["energies"])
         # if "veto" in self.h5_file.keys():
         #     self.veto  = np.array(self.h5_file["veto"])
         #     self.veto2 = np.array(self.h5_file["veto2"])
         self.event_hits_index = np.append(self.h5_file["event_hits_index"], self.h5_file["hit_pmt"].shape[0]).astype(np.int64)
 
         self.hit_pmt = self.load_hits("hit_pmt")
-        self.hit_time = self.load_hits("hit_time")
+        #self.hit_time = self.load_hits("hit_time")
 
         # Set attribute so that method won't be invoked again
         self.initialized = True
@@ -122,10 +122,10 @@ class H5CommonDataset(Dataset, ABC):
 
         data_dict = {
             "labels": self.labels[item].astype(np.int64),
-            "energies": self.energies[item].copy(),
-            "angles": self.angles[item].copy(),
-            "positions": self.positions[item].copy(),
-            "directions": direction_from_angles(self.angles[item]),
+            #"energies": self.energies[item].copy(),
+            #"angles": self.angles[item].copy(),
+            #"positions": self.positions[item].copy(),
+            #"directions": direction_from_angles(self.angles[item]),
             # "event_ids": self.event_ids[item],
             # "root_files": self.root_files[item],
             "indices": item
@@ -153,7 +153,7 @@ class H5Dataset(H5CommonDataset, ABC):
     def initialize(self):
         """Creates a memmap for the digitized hit charge data."""
         super().initialize()
-        self.hit_charge = self.load_hits("hit_charge")
+        #self.hit_charge = self.load_hits("hit_charge")
         
     def __getitem__(self, item):
         data_dict = super().__getitem__(item)
@@ -162,11 +162,47 @@ class H5Dataset(H5CommonDataset, ABC):
         stop = self.event_hits_index[item + 1]
 
         self.event_hit_pmts = self.hit_pmt[start:stop]
-        self.event_hit_charges = self.hit_charge[start:stop]
-        self.event_hit_times = self.hit_time[start:stop]
+        #self.event_hit_charges = self.hit_charge[start:stop]
+        #self.event_hit_times = self.hit_time[start:stop]
 
         return data_dict
 
+class H5Dataset_bonsai(H5Dataset, ABC):
+    """
+    Class for loading from an HDF5 file containing digitized hit data. The base class H5CommonDataset handles loading
+    data that is common to digitized and true hit datasets, while this class handles loading the additional array that
+    only the digitized hit datasets contain:
+
+    =============================================================
+    Array name  Shape      Data type  Description
+    =============================================================
+    hit_charge  (n_hits,)  float32    Charge of the digitized hit
+    =============================================================
+    """
+    def __init__(self, h5_path, use_memmap=True):
+        H5Dataset.__init__(self, h5_path, use_memmap)
+
+    def initialize(self):
+        """Creates a memmap for the digitized hit charge data."""
+        super().initialize()
+        #self.hit_charge = self.load_hits("hit_charge")
+        self.graph_edges = self.load_hits("graph_edges")
+        self.edge_vars = self.load_hits("edge_vars")
+        self.tvtx_data = np.array(self.h5_file["tvtx_data"])
+        self.event_edges_index = np.append(self.h5_file["event_edges_index"], self.h5_file["graph_edges"].shape[0]).astype(np.int64)
+
+    def __getitem__(self, item):
+        data_dict = super().__getitem__(item)
+
+        data_dict["tvtx_data"]=self.tvtx_data.__getitem__(item)
+
+        start_edges = self.event_edges_index[item]
+        stop_edges = self.event_edges_index[item + 1]
+
+        self.event_edges = self.graph_edges[start_edges:stop_edges]
+        self.event_edge_vars = self.edge_vars[start_edges:stop_edges]
+
+        return data_dict
 
 class H5TrueDataset(H5CommonDataset, ABC):
     """

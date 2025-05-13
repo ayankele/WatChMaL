@@ -45,7 +45,7 @@ class GCN(torch.nn.Module):
 
 
 class ResGCN(torch.nn.Module):
-    def __init__(self,  in_feat=8, h_feat=128, num_classes=4, num_layers=6, dropout=0.1):
+    def __init__(self,  in_feat=8, edge_dim=1, h_feat=128, num_classes=4, num_layers=6, dropout=0.1):
         '''
         Residual Graph Convolutional Network (ResGCN)
         The skip connection operations from the 
@@ -57,11 +57,12 @@ class ResGCN(torch.nn.Module):
         super().__init__()
 
         self.node_encoder = torch.nn.Linear(in_feat, h_feat)
+        self.edge_encoder = torch.nn.Linear(edge_dim, h_feat)
 
         self.layers = torch.nn.ModuleList()
         for i in range(1, num_layers + 1):
             conv = torch_geometric.nn.GENConv(
-                h_feat, h_feat, aggr='softmax', t=1.0, learn_t=True, num_layers=2, norm='layer')
+                h_feat, h_feat, aggr='softmax', t=1.0, learn_t=True, num_layers=2, norm='layer', edge_dim=h_feat)
             norm = torch.nn.LayerNorm(h_feat, elementwise_affine=True)
             act = torch.nn.ReLU(inplace=True)
 
@@ -72,10 +73,11 @@ class ResGCN(torch.nn.Module):
         self.classifier = torch.nn.Linear(h_feat, num_classes)
 
     def forward(self, graph):
-        x, edge_index, batch = graph.x, graph.edge_index, graph.batch
+        x, edge_index, edge_attr, batch = graph.x, graph.edge_index, graph.edge_attr, graph.batch
         x = self.node_encoder(x)
+        if edge_attr is not None: edge_attr = self.edge_encoder(edge_attr)
         for layer in self.layers:
-            x = layer(x, edge_index)
+            x = layer(x, edge_index, edge_attr)
 
         x = torch_geometric.nn.global_add_pool(x, batch)
         return self.classifier(x)
